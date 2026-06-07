@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VISION XR — 全新一代 VR 沉浸式眼镜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --surface:#FFFFFF;--surface-alt:#F8F9FA;--text:#1A1A1A;--text-sec:#666666;
+  --text-mut:#888888;--border:#EEF0F2;--accent:#4A9FD8;--accent-hover:#3A8FC8;
+  --shadow:0 4px 6px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.06);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Geist',system-ui,sans-serif;background:var(--surface);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5;position:relative}
+#particleCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
+
+/* --- Animations --- */
+@keyframes fade-up{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes scale-in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-32px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideR{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:translateX(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.hero-product img{animation:float 3s ease-in-out infinite}
+.anim{opacity:0;transition:all .8s cubic-bezier(.22,1,.36,1)}
+.anim-up{opacity:0;transform:translateY(40px);transition:all .8s cubic-bezier(.22,1,.36,1)}
+.anim-scale{opacity:0;transform:scale(.94);transition:all .8s cubic-bezier(.22,1,.36,1)}
+.anim.vis,.anim-up.vis,.anim-scale.vis{opacity:1;transform:translateY(0) scale(1)}
+@keyframes marq{0%{transform:translateX(0)}100%{transform:translateX(-33.33%)}}
+@media(prefers-reduced-motion:reduce){.anim,.anim-up,.anim-scale{opacity:1;transform:none;transition:none}}
+
+/* --- Layout --- */
+.container{max-width:1280px;margin:0 auto;padding:0 48px}
+.section{padding:100px 0}
+.section-alt{background:var(--surface-alt)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px;perspective:1000px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;perspective:1000px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px;perspective:1000px}
+.stagger{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;align-items:start;perspective:1000px}
+.stagger>:nth-child(2){margin-top:48px}
+.stagger>:nth-child(3){margin-top:96px}
+
+/* --- Nav --- */
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;gap:40px;height:68px;max-width:1280px;margin:0 auto;padding:0 48px}
+.logo{font-size:18px;font-weight:600;letter-spacing:-.3px}
+.nav-links{display:flex;gap:24px}
+.nav-links a{text-decoration:none;font-size:13px;font-weight:500;color:var(--text-sec);transition:color .25s;position:relative}
+.nav-links a:hover{color:var(--text)}
+.nav-links a::after{content:'';position:absolute;bottom:-3px;left:0;width:0;height:1.5px;background:var(--text);transition:width .3s}
+.nav-links a:hover::after{width:100%}
+.nav-r{margin-left:auto;display:flex;gap:12px}
+.nav-r svg{width:18px;height:18px;color:var(--text-mut);cursor:pointer;transition:color .25s}
+.nav-r svg:hover{color:var(--text)}
+
+/* --- Hero --- */
+#hero{position:relative;min-height:100vh;margin-top:-68px;padding-top:68px;overflow:hidden}
+#hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#f8f9fa 0%,#e8eaed 50%,#f0f2f5 100%)}
+#hero::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.85) 40%,rgba(255,255,255,.7) 100%)}
+.hero{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;min-height:90vh;padding:60px 0}
+.eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--text-mut);margin-bottom:14px;font-weight:500}
+.h1{font-size:56px;font-weight:650;letter-spacing:-1.5px;line-height:1.05;margin-bottom:16px}
+.h1 span{color:var(--accent)}
+.h2{font-size:38px;font-weight:600;letter-spacing:-.8px;line-height:1.15;margin-bottom:12px}
+.text-l{font-size:16px;color:var(--text-sec);line-height:1.7;max-width:560px;margin-bottom:28px}
+.text-s{font-size:14px;color:var(--text-mut);line-height:1.6}
+
+.hero-product{position:relative;width:100%;height:650px;border-radius:24px;overflow:hidden}
+.hero-product img{width:100%;height:100%;object-fit:cover}
+.spec{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--text-sec);font-weight:500}
+.spec svg{width:14px;height:14px}
+.cta-group{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:500;border:none;cursor:pointer;transition:all .3s;text-decoration:none}
+.btn-p{background:var(--text);color:#fff}
+.btn-p:hover{background:#333;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.btn-s{background:transparent;color:var(--text-sec);border:1px solid var(--border)}
+.btn-s:hover{background:var(--surface-alt);color:var(--text);border-color:#ccc}
+
+/* --- Cards --- */
+.card{border-radius:16px;padding:28px;background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;gap:12px;transition:all .4s cubic-bezier(.22,1,.36,1);transform-style:preserve-3d;transition:transform 1s ease-in-out}
+.card.flipping{transform:rotateY(360deg)}
+.card-icon{width:32px;height:32px;color:var(--accent)}
+.card-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-mut);font-weight:500}
+.card-val{font-size:22px;font-weight:600;letter-spacing:-.4px}
+.card h3{font-size:16px;font-weight:550;letter-spacing:-.2px}
+.card p{font-size:13px;color:var(--text-sec);line-height:1.6}
+.card-img{width:100%;border-radius:10px;aspect-ratio:16/9;object-fit:cover}
+.card-tall{grid-row:span 2}
+.card-wide{grid-column:span 2}
+
+/* --- Bento Grid --- */
+.bento{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.bento>:first-child{grid-column:1/3;grid-row:1/3}
+.bento-img{width:100%;height:100%;border-radius:12px;object-fit:cover}
+.card-full{grid-column:1/-1 !important}
+.card-full .card-img{min-height:280px}
+.scene-row{display:flex;gap:20px;grid-column:1/-1}
+.scene-row .card{flex:1;border-radius:16px}
+.scene-row .card-img{height:70px}
+
+/* --- Banner --- */
+.banner{width:100%;border-radius:20px;overflow:hidden;position:relative;background:linear-gradient(135deg,#ececec,#f5f5f5);min-height:240px;display:flex;align-items:center;justify-content:center;margin-top:40px;transition:all .3s;cursor:pointer}
+.banner-in{padding:48px;text-align:center;max-width:680px;position:relative;z-index:1;opacity:0;transition:opacity .3s}
+.banner:hover .banner-in{opacity:1}
+.banner::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);opacity:0;transition:opacity .3s}
+.banner:hover::after{opacity:1}
+.banner-shine{position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at center, rgba(255,255,255,.4) 0%, transparent 50%);pointer-events:none;opacity:0;transition:opacity .3s;transform:translate(-50%,-50%)}
+.banner:hover .banner-shine{opacity:1}
+.banner-in p{color:#fff;font-size:14px;line-height:1.8}
+
+/* --- Marquee --- */
+.marquee{overflow:hidden;padding:36px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.marq-in{display:flex;gap:48px;animation:marq 30s linear infinite;width:max-content}
+.marq-in span{font-size:13px;color:var(--text-mut);font-weight:450;white-space:nowrap}
+
+/* --- Footer --- */
+footer{border-top:1px solid var(--border);padding:40px 48px}
+.footer-in{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-l{display:flex;flex-direction:column;gap:3px}
+.footer-l .b{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.footer-l .t{font-size:12px;color:var(--text-mut)}
+.footer-r span{font-size:12px;color:var(--text-mut);display:block;line-height:1.6;text-align:right}
+
+/* --- Responsive --- */
+@media(max-width:1024px){
+  .hero{grid-template-columns:1fr;min-height:auto;gap:40px;padding:60px 0}
+  .h1{font-size:40px}.h2{font-size:30px}
+  .grid4{grid-template-columns:1fr 1fr}
+  .stagger{grid-template-columns:1fr 1fr}
+  .stagger>:nth-child(3){margin-top:0}
+}
+@media(max-width:640px){
+  .container{padding:0 20px}
+  .section{padding:64px 0}
+  .grid2,.grid3,.grid4{grid-template-columns:1fr}
+  .stagger{grid-template-columns:1fr}
+  .stagger>:nth-child(2),.stagger>:nth-child(3){margin-top:0}
+  .h1{font-size:32px}.h2{font-size:24px}
+  .hero-img{height:300px}
+  .nav-inner{padding:0 20px}
+  .nav-links{display:none}
+  .bento{grid-template-columns:1fr}
+  .bento>:first-child{grid-column:auto;grid-row:auto}
+}
+</style>
+</head>
+<body>
+<canvas id="particleCanvas"></canvas>
+
+<!-- Nav -->
+<nav><div class="nav-inner">
+<span class="logo">VISION XR</span>
+<div class="nav-links">
+<a href="#hero">产品</a><a href="#display">显示</a><a href="#ergo">设计</a><a href="#interact">交互</a><a href="#scenes">场景</a><a href="#specs">规格</a>
+</div>
+<div class="nav-r">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="21" r="1"/><circle cx="21" cy="21" r="1"/><path d="M3 3h3l1.68 11.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 7H6"/></svg>
+</div>
+</div></nav>
+
+<!-- Hero -->
+<section id="hero" class="section"><div class="container">
+<div class="hero">
+<div class="anim-up" style="transition-delay:.12s">
+<span class="eyebrow">VISION XR</span>
+<h1 class="h1">全新一代<br><span>VR 沉浸式</span>眼镜</h1>
+<p class="text-l">轻量化佩戴 · 超清视觉 · 全场景沉浸式交互。融合高清显示、空间追踪与人体工学，打破传统 VR 痛点，开启虚拟现实新纪元。</p>
+<div class="cta-group">
+<a class="btn btn-p" href="#">了解更多 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+<a class="btn btn-s" href="#">技术规格</a>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+<span class="spec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>85g 超轻量</span>
+<span class="spec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>2000+ PPI</span>
+<span class="spec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 1 23 7 17 7"/><polyline points="1 17 1 23 7 23"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 7M1 23l5.64-5.36A9 9 0 0 0 20.49 15"/></svg>120Hz 高刷</span>
+</div>
+</div>
+<div class="anim-scale hero-product" style="transition-delay:.3s">
+<img src="./WechatIMG1725 4.png" alt="VISION XR">
+</div>
+</div>
+</div></section>
+
+<!-- Display Specs -->
+<section id="display" class="section section-alt"><div class="container">
+<div class="anim-up"><span class="eyebrow">视觉系统</span></div>
+<h2 class="h2 anim-up">超清视觉沉浸系统</h2>
+<p class="text-s anim-up" style="max-width:640px;margin-bottom:32px">搭载高清 VR 定制屏幕，高分辨率、高色域与高通透画质，有效抑制纱窗效应与模糊重影。</p>
+<div class="grid4">
+<div class="card anim-up" style="transition-delay:.1s">
+<span class="card-label">分辨率</span>
+<span class="card-val">2000+ PPI</span>
+<p>双目超高清，像素密度领先行业，画面细腻无颗粒感</p>
+<img class="card-img" src="./1.png" alt="分辨率">
+</div>
+<div class="card anim-up" style="transition-delay:.2s">
+<span class="card-label">刷新率</span>
+<span class="card-val">90Hz / 120Hz</span>
+<p>高刷新率动态显示，减少拖影、卡顿与视觉疲劳</p>
+<img class="card-img" src="./2.png" alt="刷新率">
+</div>
+<div class="card anim-up" style="transition-delay:.3s">
+<span class="card-label">视场角 FOV</span>
+<span class="card-val">120&deg; 超广角</span>
+<p>近乎无边界全景视觉，视野更包容、沉浸感更强</p>
+<img class="card-img" src="./3.png" alt="FOV">
+</div>
+<div class="card anim-up" style="transition-delay:.4s">
+<span class="card-label">光学方案</span>
+<span class="card-val">Pancake 光学</span>
+<p>升级光学透镜，大幅提升透光率与画面均匀度</p>
+<img class="card-img" src="./5.png" alt="Pancake">
+</div>
+</div>
+<div class="banner" style="margin-top:32px">
+<img src="./dBanner.png" alt="" style="position:absolute;width:100%;height:100%;object-fit:cover">
+<div class="banner-shine"></div>
+<div class="banner-in"><p>支持高刷新率动态画面显示，快速响应动态场景，无论是高速游戏画面、全景影视大片，还是 3D 沉浸式场景，都能呈现细腻逼真、层次丰富的极致画质。</p></div>
+</div>
+</div></section>
+
+<!-- Ergonomics -->
+<section id="ergo" class="section"><div class="container">
+<div class="anim-up"><span class="eyebrow">佩戴体验</span></div>
+<h2 class="h2 anim-up">轻量化人体工学</h2>
+<p class="text-s anim-up" style="max-width:640px;margin-bottom:32px">整机轻量化结构，优化内部布局，大幅降低重量。告别传统VR头部重压感，长时间佩戴依旧舒适。</p>
+<div class="stagger">
+<div class="card anim-up" style="transition-delay:.1s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+<h3>轻量化机身</h3>
+<p>整机轻量化设计，优化内部结构，大幅降低整机重量。告别头部重压感与负重疲劳。</p>
+<img class="card-img" src="./4.png" alt="轻量化">
+</div>
+<div class="card anim-up" style="transition-delay:.2s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+<h3>亚洲头型适配</h3>
+<p>贴合亚洲人头型的弧形分压结构，合理分散面部与头顶受力，舒适不闷汗、不压脸。</p>
+<img class="card-img" src="./7.png" alt="头型">
+</div>
+<div class="card anim-up" style="transition-delay:.3s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+<h3>散热结构升级</h3>
+<p>机身散热结构全面升级，搭配柔性亲肤衬垫，透气性与舒适度兼具，清爽舒适。</p>
+<img class="card-img" src="./2.png" alt="散热">
+</div>
+</div>
+</div></section>
+
+<!-- Interaction -->
+<section id="interact" class="section section-alt"><div class="container">
+<div class="anim-up"><span class="eyebrow">交互性能</span></div>
+<h2 class="h2 anim-up">智能空间交互</h2>
+<p class="text-s anim-up" style="max-width:640px;margin-bottom:32px">搭载高性能芯片，高精度追踪与姿态感应，即开即用。</p>
+<div class="grid3">
+<div class="card anim-up" style="transition-delay:.1s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+<h3>高性能处理芯片</h3>
+<p>运行算力更强、响应速度更快。多任务、大型应用、3D场景加载流畅稳定。</p>
+<img class="card-img" src="./4.png" alt="芯片">
+</div>
+<div class="card anim-up" style="transition-delay:.2s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+<h3>精准空间追踪</h3>
+<p>内置高精度空间追踪与姿态感应，精准捕捉头部、肢体动态动作。</p>
+<img class="card-img" src="./6.png" alt="追踪">
+</div>
+<div class="card anim-up" style="transition-delay:.3s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+<h3>即开即用便捷体验</h3>
+<p>多角度空间识别、场景自适应调节，开机即可快速进入沉浸式交互状态。</p>
+<img class="card-img" src="./7.png" alt="便捷">
+</div>
+</div>
+</div></section>
+
+<!-- Scenes -->
+<section id="scenes" class="section"><div class="container">
+<div class="anim-up"><span class="eyebrow">使用场景</span></div>
+<h2 class="h2 anim-up">全场景多元生态</h2>
+<p class="text-s anim-up" style="max-width:640px;margin-bottom:32px">覆盖全场景沉浸式需求，打造一人一机的私人虚拟空间。</p>
+<div class="bento">
+<div class="card card-tall anim-scale" style="transition-delay:.1s;border:none;padding:0;overflow:hidden">
+<img class="bento-img" src="./8.png" alt="巨幕观影" style="min-height:320px">
+<div style="position:absolute;bottom:0;left:0;right:0;padding:24px;background:linear-gradient(transparent,rgba(0,0,0,.6))">
+<h3 style="color:#fff;font-size:18px;font-weight:500">沉浸式巨幕观影</h3>
+<p style="color:rgba(255,255,255,.8);font-size:13px">影院级大屏视觉，全景沉浸视听</p>
+</div>
+</div>
+<div class="card anim-up" style="transition-delay:.15s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+<h3>3D 立体游戏</h3>
+<p>6DoF 精准追踪，交互真实、沉浸感更强、更刺激</p>
+<img class="card-img" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=immersive+3D+VR+gaming+experience+futuristic+neon+lights+gaming+room+with+holographic+displays+cyberpunk+style+action+game+characters+high+tech+environment&image_size=square_hd" alt="游戏">
+</div>
+<div class="card anim-up" style="transition-delay:.2s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12"/><path d="M6 12h12"/><path d="M6 16h12"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+<h3>VR 健身运动</h3>
+<p>趣味体感运动课程，在家轻松燃脂，健身不再枯燥</p>
+<img class="card-img" src="./3.png" alt="健身">
+</div>
+<div class="scene-row">
+<div class="card anim-up" style="transition-delay:.25s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+<h3>实训与全景会议</h3>
+<p>适配虚拟展厅、教学、全景会议，一机多用</p>
+<img class="card-img" src="./dBanner.png" alt="会议">
+</div>
+<div class="card anim-up" style="transition-delay:.3s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><rect x="6" y="7" width="12" height="2"/></svg>
+<h3>全景虚拟办公</h3>
+<p>多屏协同、虚拟桌面办公，娱乐与工作完美兼顾</p>
+<img class="card-img" src="./14.png" alt="办公">
+</div>
+</div>
+</div>
+</div></section>
+
+<!-- Safety & Specs -->
+<section id="specs" class="section section-alt"><div class="container">
+<div class="anim-up"><span class="eyebrow">品质保障</span></div>
+<h2 class="h2 anim-up">安全护眼 & 长效续航</h2>
+<p class="text-s anim-up" style="max-width:640px;margin-bottom:32px">专业护眼防护、大容量电池、高品质工艺，持续 OTA 升级。</p>
+<div class="stagger">
+<div class="card anim-up" style="transition-delay:.1s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10"/><path d="M15 3a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2h6V3Z"/></svg>
+<h3>专业护眼防护</h3>
+<p>有效过滤有害蓝光，降低长时间用眼刺激，减少视觉疲劳。兼顾娱乐与用眼健康。</p>
+<img class="card-img" src="./10.png" alt="护眼">
+</div>
+<div class="card anim-up" style="transition-delay:.2s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M12 22v-4"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
+<h3>大容量长效续航</h3>
+<p>功耗优化升级，单次满电可长时间连续观影、游戏体验，畅玩不断电。</p>
+<img class="card-img" src="./11.png" alt="续航">
+</div>
+<div class="card anim-up" style="transition-delay:.3s">
+<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+<h3>高品质工艺 + OTA</h3>
+<p>耐磨抗摔材质，搭配系统 OTA 升级，不断解锁新功能，越用越新。</p>
+<img class="card-img" src="./12.png" alt="OTA">
+</div>
+</div>
+</div></section>
+
+<!-- Marquee -->
+<div class="marquee"><div class="container">
+<div class="marq-in">
+<span>2000+ PPI 超高清</span><span>·</span><span>120Hz 高刷新率</span><span>·</span><span>120° 超广角 FOV</span><span>·</span><span>85g 超轻量机身</span><span>·</span><span>Pancake 光学方案</span><span>·</span><span>6DoF 空间追踪</span><span>·</span>
+<span>2000+ PPI 超高清</span><span>·</span><span>120Hz 高刷新率</span><span>·</span><span>120° 超广角 FOV</span><span>·</span><span>85g 超轻量机身</span><span>·</span><span>Pancake 光学方案</span><span>·</span><span>6DoF 空间追踪</span><span>·</span>
+<span>2000+ PPI 超高清</span><span>·</span><span>120Hz 高刷新率</span><span>·</span><span>120° 超广角 FOV</span><span>·</span><span>85g 超轻量机身</span><span>·</span><span>Pancake 光学方案</span><span>·</span><span>6DoF 空间追踪</span><span>·</span>
+</div>
+</div></div>
+
+<!-- Footer -->
+<footer><div class="footer-in">
+<div class="footer-l"><span class="b">VISION XR</span><span class="t">为未来而生 · 重塑虚拟现实体验</span></div>
+<div class="footer-r"><span>&copy; 2026 Vision XR. All rights reserved.</span><span>客服热线：400-888-8888</span></div>
+</div></footer>
+
+<script>
+// Intersection Observer for scroll animations
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('vis');
+      obs.unobserve(e.target);
+    }
+  });
+}, { threshold: .12, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.anim-up, .anim, .anim-scale').forEach(el => obs.observe(el));
+
+// === 粒子系统 ===
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {
+  constructor(x, y, isClick = false) {
+    this.x = x;
+    this.y = y;
+    this.size = Math.random() * 2.1 + 1.05;
+
+    let angle = Math.random() * Math.PI * 2;
+    angle += (Math.random() - 0.5) * 0.8;
+
+    const speed = isClick
+      ? Math.random() * 5 + 2
+      : Math.random() * 3 + 1;
+
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+
+    this.alpha = 1;
+    this.decay = Math.random() * 0.012 + 0.008;
+    this.friction = 0.985;
+    this.wobble = Math.random() * 0.1 - 0.05;
+    this.turnSpeed = Math.random() * 0.03;
+  }
+
+  update() {
+    let curAngle = Math.atan2(this.vy, this.vx);
+    curAngle += this.turnSpeed;
+    const curSpeed = Math.hypot(this.vx, this.vy);
+    this.vx = Math.cos(curAngle) * curSpeed;
+    this.vy = Math.sin(curAngle) * curSpeed;
+
+    this.vx += this.wobble;
+    this.vy += this.wobble;
+    this.vx *= this.friction;
+    this.vy *= this.friction;
+
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha -= this.decay;
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0, 0, 0, ${this.alpha})`;
+    ctx.fill();
+  }
+}
+
+// 鼠标移动：少量粒子
+document.addEventListener('mousemove', (e) => {
+  for (let i = 0; i < 4; i++) {
+    particles.push(new Particle(e.clientX, e.clientY));
+  }
+});
+
+// 鼠标点击：更多粒子 + 炸开
+document.addEventListener('click', (e) => {
+  for (let i = 0; i < 20; i++) {
+    particles.push(new Particle(e.clientX, e.clientY, true));
+  }
+});
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.update();
+    p.draw();
+    if (p.alpha <= 0) particles.splice(i, 1);
+  }
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    card.style.transform = 'rotateY(0deg)';
+    setTimeout(() => {
+      card.style.transform = 'rotateY(360deg)';
+    }, 50);
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'rotateY(360deg)';
+    setTimeout(() => {
+      card.style.transform = 'rotateY(0deg)';
+    }, 50);
+  });
+});
+</script>
+</body>
+</html>
